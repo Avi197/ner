@@ -1,0 +1,148 @@
+Easy Fine-Tuning of Transformers for Named-Entity Recognition
+How to easily fine-tune any Natural Language Processing Transformer for Named-Entity Recognition in any language.
+Lars Kjeldgaard
+Lars Kjeldgaard
+
+Feb 1·7 min read
+
+
+
+
+
+Photo by vinsky2002 on Pixabay
+In this article, we will go through how to easily fine-tune any pretrained Natural Language Processing (=NLP) transformer for Named-Entity Recognition (=NER) in any language.
+Why should you care? Well, NER is a powerful NLP task with many applications, as has been thoroughly described on Towards Data Science. However, effectively using NER often requires language or domain specific fine-tuning of your NER model based on the pretrained transformers that are available and realistic to use given your compute budget.
+To show you how to do just that, we use the python package NERDA to fine-tune a BERT transformer for NER.
+NERDA is a general purpose NER-system that can be used for fine-tuning any transformer for NER in any language with a minimum of code.
+Named-Entity Recognition for Starters
+If you are not familiar with NER, look to the Wikipedia definition:
+Named-entity recognition (also known as (named) entity identification, entity chunking, and entity extraction) is a Natural Language Processing subtask of information extraction that seeks to locate and classify named entities mentioned in unstructured text into pre-defined categories such as person names, organizations, locations, medical codes, time expressions, quantities, monetary values, percentages, etc.
+We can illustrate this further with an example of a NER task.
+TASK: Identify person names and organizations in text:
+Jim bought 300 shares of Acme Corp.
+SOLUTION: Persons: ‘Jim’, Organizations: ‘Acme Corp.’
+To get an introduction to the other concepts and technologies mentioned in this article we have listed a number of previous Towards Data Science stories in the Resources section.
+Toolset
+Now, let us turn to actually fine-tuning a transformer for NER.
+The steps we show you are the same regardless of your choice of transformer and target language.
+We will utilize the new python package NERDA for the job.
+
+Official logo for the ‘NERDA’ python package by PIN @ Ekstra Bladet.
+NERDA has an easy-to-use interface for fine-tuning NLP transformers for Named-Entity Recognition tasks. It builds on the popular machine learning framework PyTorch and Hugging Face transformers.
+NERDA is open-sourced and available on the Python Package Index (PyPI). It can be installed with:
+pip install NERDA
+Dataset
+We will use the English CoNLL-2003 data set with NER annotations for training and validation of our model.
+First we download the data set and load the predefined training and validation data splits.
+from NERDA.datasets import get_conll_data, download_conll_data download_conll_data()
+training = get_conll_data('train')
+validation = get_conll_data('valid')
+CoNLL-2003 operates with the following types of named entities (fairly standard categories):
+PERsons
+ORGanizations
+LOCations
+MISCellaneous
+Outside (not a named entity)
+An observation from the CoNLL-2003 data set consists of a word-tokenized sentence with a named-entity tag for each of the word tokens.
+Below you see an example of a random sentence from the CoNLL data set with its word-tokens coupled with their respective named-entity tags ([tag]).
+Germany [B-LOC]
+'s [O]
+representative [O]
+to [O] 
+the [O]
+European [B-ORG] 
+Union [I-ORG] 
+'s [O]
+veterinary [O] 
+committee [O]
+Werner [B-PER] 
+Zwingmann [I-PER]
+said [O]
+on [O] 
+Wednesday [O]
+...
+The data set implements the Inside-Outside-Beginning (IOB) tagging scheme.
+The IOB tagging scheme implies, that words that are beginning of named entities are tagged with ‘B-’ and words ‘inside’ (=continuations of) named entities are tagged with ‘I-’.
+In the example above, ‘Germany’ is identified as a LOCation, ‘European Union’ as an ORGanization and ‘Werner Zwingmann’ as a PERson.
+Setting up the model
+As a first step, we specify the available NER tags for the task (excluding the special ‘outside’ tag).
+tag_scheme = [
+'B-PER',
+'I-PER',
+'B-ORG',
+'I-ORG',
+'B-LOC',
+'I-LOC',
+'B-MISC',
+'I-MISC'
+]
+Next, we must decide, which transformer from Hugging Face transformers, we want to fine-tune. We will stick with an uncased multilingual BERT transformer (a popular choice).
+transformer = 'bert-base-multilingual-uncased'
+Also, we have the option to provide a selection of basic hyperparameters for the network as well as for the model training itself.
+# hyperparameters for network
+dropout = 0.1
+# hyperparameters for training
+training_hyperparameters = {
+'epochs' : 4,
+'warmup_steps' : 500,                                                   'train_batch_size': 13,                                         'learning_rate': 0.0001
+}
+Putting the pieces together
+Now, put the pieces together into a complete model configuration using the NERDA model interface.
+from NERDA.models import NERDA
+model = NERDA(
+dataset_training = training,
+dataset_validation = validation,
+tag_scheme = tag_scheme, 
+tag_outside = 'O',
+transformer = transformer,
+dropout = dropout,
+hyperparameters = training_hyperparameters
+)
+Under the hood NERDA implements a torch neural network, that builds on the chosen transformer (in this case BERT). By default, the architecture of the network will be analogous to the one of the models in Hvingelby et al. 2020 (you can also provide your own network architecture, if you want).
+In order to train the model and thereby fine-tune the BERT transformer, all there is left to do is to invoke the train method.
+model.train()
+Note: this will take some time depending on the dimensions of your machine (if you want to skip training, you can go ahead and use one of the precooked models, that NERDA ships with).
+And that is all there is to it. We have now fine-tuned our very own state-of-the-art BERT-based model for NER.
+Let us see how the model performs (by means of F1-scores) on an independent test set.
+>>> test = get_conll_data('test')
+>>> model.evaluate_performance(test)
+Level  F1-Score 
+B-PER  0.963
+I-PER  0.987
+B-ORG  0.887
+I-ORG  0.866
+B-LOC  0.922
+I-LOC  0.817
+B-MISC  0.823
+I-MISC  0.680
+AVG_MICRO 0.907
+‘AVG_MICRO’: the micro-averaged F1-score across entity tags.
+As you see, performance looks great.
+We can now use the model for identifying named-entities in new texts, i.e.
+>>> model.predict_text('Cristiano Ronaldo plays for Juventus FC')
+([['Cristian', 'Ronaldo', 'plays', 'for', 'Juventus', 'FC']], 
+[['B-PER', 'I-PER', 'O', 'O', 'B-ORG', 'I-ORG']])
+The model (correctly) identifies ‘Cristiano Ronaldo’ (football player) as a person and ‘Juventus FC’ (football club) as an organization.
+Fine-Tune Any Transformer
+For the time being more than 5000 transformer models are available on Hugging Face. So which one should you fine-tune? We hate to disappoint you, but the answer is: it depends. There is no free lunch. The transformer models all have their different strengths and weaknesses. In addition, you need to choose a transformer that aligns with your compute budget and level of respect for climate change.
+As mentioned earlier, BERT is usually a good pick. The new kid on the block, ELECTRA, is however much more lightweight and computationally efficient compared to BERT and still performs very well on NER tasks.
+Whatever transformer you pick, chances are that NERDA will support it. In the code example above all you would have to change in order to fine-tune an ELECTRA transformer in stead of BERT would be to change the transformer parameter, i.e.:
+model = NERDA(
+...,
+transformer = 'google/electra-small-discriminator',
+...
+)
+Fine-Tune for Any Language
+With NERDAyou can also fine-tune a transformer for any language e.g. using your own data set with ease. To fine-tune a transformer for NER in Danish, we can utilize the DaNE data set consisting of Danish sentences with NER annotations.
+All you would have to change in the former code example to achieve this is simply:
+from NERDA.datasets import get_dane_data
+model = NERDA(
+...,
+dataset_training = get_dane_data('train'),
+dataset_validation = get_dane_data('dev'),
+...
+)
+If you do not have any (or just not enough) training data with NER annotations for the desired language, you can use tools like doccano for annotating new texts.
+Surprisingly, fine-tuning NERDA for a specific language does not require as much annotated data as you might think, as NERDA leverages the knowledge that is already existing in the transformer. The Danish NER dataset DaNE, for example, includes not more than 5500 sentences, which is enough for training NERDA models with reasonable performance.
+About `NERDA`
+NERDA is developed as a part of Ekstra Bladet’s activities on Platform Intelligence in News (PIN). PIN is an industrial research project that is carried out in collaboration between the Technical University of Denmark, University of Copenhagen and Copenhagen Business School with funding from Innovation Fund Denmark. The project runs from 2020-2023 and develops recommender systems and natural language processing systems geared for news publishing, some of which are open sourced like NERDA.
