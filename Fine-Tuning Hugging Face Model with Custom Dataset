@@ -1,0 +1,115 @@
+Fine-Tuning Hugging Face Model with Custom Dataset
+End-to-end example to explain how to fine-tune the Hugging Face model with a custom dataset using TensorFlow and Keras. I show how to save/load the trained model and execute the predict function with tokenized input.
+Andrej Baranovskij
+
+Andrej Baranovskij
+
+Sep 13, 2020·4 min read
+Author: Andrej Baranovskij
+
+There are many articles about Hugging Face fine-tuning with your own dataset. Many of the articles are using PyTorch, some are with TensorFlow. I had a task to implement sentiment classification based on a custom complaints dataset. I decided to go with Hugging Face transformers, as results were not great with LSTM. Despite a large number of available articles, it took me significant time to bring all bits together and implement my own model with Hugging Face trained with TensorFlow. It seems like most, if not all, articles stop when training is explained. I thought it would be useful to share a complete scenario and explain how to save/load the trained model and execute inference. This post is based on Hugging Face API for TensorFlow.
+
+Your starting point should be Hugging Face documentation. There is a very helpful section — Fine-tuning with custom datasets. To understand how to fine-tune Hugging Face model with your own data for sentence classification, I would recommend studying code under this section — Sequence Classification with IMDb Reviews. Hugging Face documentation provides examples for both PyTorch and TensorFlow, which is very convenient.
+
+I’m using TFDistilBertForSequenceClassification class to run sentence classification. About DistilBERT — DistilBERT is a small, fast, cheap and light Transformer model trained by distilling Bert base. It has 40% fewer parameters than bert-base-uncased, runs 60% faster while preserving over 95% of Bert’s performances as measured on the GLUE language understanding benchmark.
+
+from transformers import DistilBertTokenizerFast
+from transformers import TFDistilBertForSequenceClassificationimport tensorflow as tf
+
+    Import and prepare data
+
+An example is based on sarcasm classification using newspaper headlines. Data was prepared by Laurence Moroney, as part of his Coursera training (source code available on GitHub). I’m fetching data directly from Laurence blog:
+
+!wget --no-check-certificate \
+    https://storage.googleapis.com/laurencemoroney-blog.appspot.com/sarcasm.json \
+    -O /tmp/sarcasm.json
+
+Then it goes data processing step, reading data, splitting it into training/validation steps, and extracting an array of labels:
+
+training_size = 20000with open("/tmp/sarcasm.json", 'r') as f:
+    datastore = json.load(f)sentences = []
+labels = []
+urls = []
+for item in datastore:
+    sentences.append(item['headline'])
+    labels.append(item['is_sarcastic'])training_sentences = sentences[0:training_size]
+validation_sentences = sentences[training_size:]
+training_labels = labels[0:training_size]
+validation_labels = labels[training_size:]
+
+There are 20000 entries for training and 6709 for validation.
+
+2. Setup BERT and run training
+
+Next, we would load the tokenizer:
+
+tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
+
+Tokenize training and validation sentences:
+
+train_encodings = tokenizer(training_sentences,
+                            truncation=True,
+                            padding=True)
+val_encodings = tokenizer(validation_sentences,
+                            truncation=True,
+                            padding=True)
+
+Create TensorFlow datasets we can feed to TensorFlow fit function for training. Here we map sentences with labels, there is no need to pass label into fit function separately:
+
+train_dataset = tf.data.Dataset.from_tensor_slices((
+    dict(train_encodings),
+    training_labels
+))val_dataset = tf.data.Dataset.from_tensor_slices((
+    dict(val_encodings),
+    validation_labels
+))
+
+We need to get a pre-trained Hugging Face model, we are going to fine-tune it with our data:
+
+# We classify two labels in this example. In case of multiclass 
+# classification, adjust num_labels valuemodel = TFDistilBertForSequenceClassification.from_pretrained('distilbert-base-uncased', num_labels=2)
+
+Fine-tune the model with our data by calling TensorFlow fit function. It comes out of the box from TFDistilBertForSequenceClassification model. You can play and experiment with parameters, but the selected options are producing quite good results already:
+
+optimizer = tf.keras.optimizers.Adam(learning_rate=5e-5)
+model.compile(optimizer=optimizer, loss=model.compute_loss, metrics=['accuracy'])
+model.fit(train_dataset.shuffle(100).batch(16),
+          epochs=3,
+          batch_size=16,
+          validation_data=val_dataset.shuffle(100).batch(16))
+
+In 3 epochs it reaches 0.0387 loss and 0.9875 accuracy, with 0.3315 validation loss and 0.9118 validation accuracy.
+
+Save fine-tuned model with Hugging Face save_pretrained function. It does work to save using Keras save function model.save, but such model doesn't load. That’s why I’m using save_pretrained:
+
+model.save_pretrained("/tmp/sentiment_custom_model")
+
+To save a model is the essential step, it takes time to run model fine-tuning and you should save the result when training completes. Another option — you may run fine-runing on cloud GPU and want to save the model, to run it locally for the inference.
+
+3. Load saved model and run predict function
+
+I’m using TFDistilBertForSequenceClassification class to load the saved model, by calling Hugging Face function from_pretrained (point it to the folder, where the model was saved):
+
+loaded_model = TFDistilBertForSequenceClassification.from_pretrained("/tmp/sentiment_custom_model")
+
+Now we want to run the predict function and classify input using fine-tuned model. To be able to execute inference, we need to tokenize the input sentence the same way as it was done for training/validation data. In order to be able to read inference probabilities, pass return_tensors=”tf” flag into tokenizer. Then call predict using the saved model:
+
+test_sentence = "With their homes in ashes, residents share harrowing tales of survival after massive wildfires kill 15"
+test_sentence_sarcasm = "News anchor hits back at viewer who sent her snarky note about ‘showing too much cleavage’ during broadcast"# replace to test_sentence_sarcasm variable, if you want to test 
+# sarcasmpredict_input = tokenizer.encode(test_sentence,
+                                 truncation=True,
+                                 padding=True,
+                                 return_tensors="tf")tf_output = loaded_model.predict(predict_input)[0]
+
+Predict function running on top of Hugging Face model returns logits (scores before SoftMax). We need to apply SoftMax function to get result probabilities:
+
+tf_prediction = tf.nn.softmax(tf_output, axis=1).numpy()[0]
+
+Conclusion
+
+The goal of this post was to show a complete scenario for fine-tuning Hugging Face model with custom data — from data processing, training to model save/load, and inference execution.
+
+Source code
+
+    GitHub repo: https://github.com/katanaml/sample-apps/tree/master/02
+    Run it yourself in Colab notebook: https://colab.research.google.com/drive/1yi9N-ZnQHtYfR3QDiwsPxYCYU6WyjwlQ
