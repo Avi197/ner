@@ -14,3 +14,7 @@ ner chinese
 in summary: fine tune phobert using vlsp2016
 vlsp need to be modified
 use run_ner.py in transformers
+
+
+check legacy sample codes
+https://github.com/huggingface/transformers/tree/master/examples/pytorch/token-classification
