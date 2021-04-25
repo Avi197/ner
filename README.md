@@ -18,3 +18,6 @@ use run_ner.py in transformers
 
 check legacy sample codes
 https://github.com/huggingface/transformers/tree/master/examples/pytorch/token-classification
+
+
+ner with lstm: https://github.com/pth1993/vie-ner-lstm
