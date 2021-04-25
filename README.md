@@ -21,3 +21,5 @@ https://github.com/huggingface/transformers/tree/master/examples/pytorch/token-c
 
 
 ner with lstm: https://github.com/pth1993/vie-ner-lstm
+
+https://github.com/amrrs/custom-ner-with-spacy/blob/main/pvr_custom_ner_training2.ipynb
