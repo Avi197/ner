@@ -29,4 +29,6 @@ https://www.youtube.com/watch?v=mmCmqOWHC5A&ab_channel=1littlecoder
 
 evaluate
 https://towardsdatascience.com/how-to-compute-f1-score-for-named-entity-recognition-in-keras-6f28b31dccca \
-https://wandb.ai/abhigyan/Named%20Entity%20Recognition/reports/NER-Report--Vmlldzo0MDM0NjE
+https://wandb.ai/abhigyan/Named%20Entity%20Recognition/reports/NER-Report--Vmlldzo0MDM0NjE \
+https://scikit-learn.org/stable/modules/generated/sklearn.metrics.classification_report.html \
+http://www.davidsbatista.net/blog/2018/05/09/Named_Entity_Evaluation/
