@@ -25,3 +25,7 @@ ner with lstm: https://github.com/pth1993/vie-ner-lstm
 ner spacy
 https://github.com/amrrs/custom-ner-with-spacy/blob/main/pvr_custom_ner_training2.ipynb
 https://www.youtube.com/watch?v=mmCmqOWHC5A&ab_channel=1littlecoder
+
+
+evaluate
+https://towardsdatascience.com/how-to-compute-f1-score-for-named-entity-recognition-in-keras-6f28b31dccca
