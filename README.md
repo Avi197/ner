@@ -1,5 +1,6 @@
 # resources
 
+## Word token embedding
 tokenclassification: https://huggingface.co/transformers/task_summary.html \
 rasa: https://rasa.com/docs/rasa/nlu-training-data/ \
 Vietnamese ner but multilingual model: https://github.com/dat821168/bert_vn_ner
@@ -32,3 +33,9 @@ https://towardsdatascience.com/how-to-compute-f1-score-for-named-entity-recognit
 https://wandb.ai/abhigyan/Named%20Entity%20Recognition/reports/NER-Report--Vmlldzo0MDM0NjE \
 https://scikit-learn.org/stable/modules/generated/sklearn.metrics.classification_report.html \
 http://www.davidsbatista.net/blog/2018/05/09/Named_Entity_Evaluation/
+
+
+## Syllables level embedding
+
+https://github.com/datquocnguyen/PhoW2V \
+https://www.aclweb.org/anthology/2020.findings-emnlp.364.pdf 
