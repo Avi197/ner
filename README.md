@@ -1,6 +1,6 @@
 # resources
 
-## Word token embedding
+## Word level token embedding
 tokenclassification: https://huggingface.co/transformers/task_summary.html \
 rasa: https://rasa.com/docs/rasa/nlu-training-data/ \
 Vietnamese ner but multilingual model: https://github.com/dat821168/bert_vn_ner
@@ -37,5 +37,11 @@ http://www.davidsbatista.net/blog/2018/05/09/Named_Entity_Evaluation/
 
 ## Syllables level embedding
 
+Word2vec \
 https://github.com/datquocnguyen/PhoW2V \
 https://www.aclweb.org/anthology/2020.findings-emnlp.364.pdf 
+
+Bert \
+https://github.com/bino282/bert4news
+
+
