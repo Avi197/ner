@@ -45,3 +45,6 @@ Bert \
 https://github.com/bino282/bert4news
 
 
+
+## Note
+pandas don't know if nan (string) is any different from nan(NaN)
