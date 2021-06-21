@@ -34,6 +34,9 @@ https://wandb.ai/abhigyan/Named%20Entity%20Recognition/reports/NER-Report--Vmlld
 https://scikit-learn.org/stable/modules/generated/sklearn.metrics.classification_report.html \
 http://www.davidsbatista.net/blog/2018/05/09/Named_Entity_Evaluation/
 
+Positional embedding
+https://datascience.stackexchange.com/questions/51065/what-is-the-positional-encoding-in-the-transformer-model/51225#51225
+
 
 ## Syllables level embedding
 
